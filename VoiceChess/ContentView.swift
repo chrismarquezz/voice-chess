@@ -41,15 +41,14 @@ struct ContentView: View {
                     
                     // Check/checkmate
                     var utteranceString = "\(moveText) played"
-                    if chessboardModel.game.isCheck {
-                        utteranceString += ". Check!"
-                    }
                     if chessboardModel.game.isMate {
                         utteranceString += ". Checkmate!"
+                    } else if chessboardModel.game.isCheck {
+                        utteranceString += ". Check!"
                     }
                     
                     // Speak move
-                    let utterance = AVSpeechUtterance(string: "\(moveText) played")
+                    let utterance = AVSpeechUtterance(string: utteranceString)
                     utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
                     speechSynthesizer.speak(utterance)
                 }
@@ -100,14 +99,13 @@ struct ContentView: View {
                             
                             // Speak move and check/checkmate
                             var utteranceString = "\(moveText) played"
-                            if chessboardModel.game.isCheck {
-                                utteranceString += ". Check!"
-                            }
                             if chessboardModel.game.isMate {
                                 utteranceString += ". Checkmate!"
+                            } else if chessboardModel.game.isCheck {
+                                utteranceString += ". Check!"
                             }
                             
-                            let utterance = AVSpeechUtterance(string: "\(moveText) played")
+                            let utterance = AVSpeechUtterance(string: utteranceString)
                             utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
                             speechSynthesizer.speak(utterance)
                             
@@ -194,7 +192,7 @@ extension String {
             }
         }
         return nil
-        }
+    }
 }
 
 #Preview {
