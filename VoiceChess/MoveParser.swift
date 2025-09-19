@@ -14,33 +14,68 @@ struct MoveParser {
     let game: Game
     
     /// Convert a string command into a `Move` object
-    /// Example inputs: "Knight to f3", "e2 to e4"
+    /// Example inputs: "Knight f3", "Bishop c4", "e4"
     func parse(_ command: String) -> Move? {
-        let lowercased = command.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        // Normalize command
+        var lowercased = command.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // Simple regex to detect moves like "e2 to e4"
-        let pattern = #"([a-h][1-8])\s*(to|-)\s*([a-h][1-8])"#
-        if let regex = try? NSRegularExpression(pattern: pattern),
-           let match = regex.firstMatch(in: lowercased, range: NSRange(lowercased.startIndex..., in: lowercased)) {
-            
-            let fromRange = Range(match.range(at: 1), in: lowercased)!
-            let toRange = Range(match.range(at: 3), in: lowercased)!
-            
-            let fromSquare = String(lowercased[fromRange])
-            let toSquare   = String(lowercased[toRange])
-            
-            let from = Square(coordinate: fromSquare)
-            let to   = Square(coordinate: toSquare)
-
-            // Get all legal moves from the current position
-            let legalMoves = game.legalMoves
-            
-            // Find the matching move
-            return legalMoves.first { $0.from == from && $0.to == to }
+        // Replace homophones
+        let homophones: [String: String] = [
+            "night": "knight",
+            "church": "bishop", // example if needed
+            "king": "king",
+            "queen": "queen",
+            "rook": "rook",
+            "pawn": "pawn"
+        ]
+        for (wrong, correct) in homophones {
+            lowercased = lowercased.replacingOccurrences(of: wrong, with: correct)
         }
         
-        // TODO: Extend for piece names like "Knight to f3"
+        let words = lowercased.components(separatedBy: " ")
+        
+        // Check for piece move (like "Knight f3")
+        if words.count == 2, let pieceKind = pieceKind(from: words[0]) {
+            let toSquare = Square(coordinate: words[1])
+            
+            // Filter legal moves going to the target square and matching piece kind
+            let candidates = game.legalMoves.filter { move in
+                move.to == toSquare && game.position.board[move.from]?.kind == pieceKind
+            }
+            
+            return candidates.first
+        }
+        
+        // Pawn move (like "e4")
+        if words.count == 1 {
+            let toSquare = Square(coordinate: words[0])
+            
+            // Pawns moving to the square
+            let candidates = game.legalMoves.filter { move in
+                move.to == toSquare && game.position.board[move.from]?.kind == .pawn
+            }
+            
+            return candidates.first
+        }
         
         return nil
+    }
+    
+    /// Convert string to ChessKit.PieceKind
+    private func pieceKind(from string: String) -> PieceKind? {
+        switch string.lowercased() {
+        case "knight":
+            return .knight
+        case "bishop":
+            return .bishop
+        case "rook":
+            return .rook
+        case "queen":
+            return .queen
+        case "king":
+            return .king
+        default:
+            return nil
+        }
     }
 }

@@ -39,18 +39,23 @@ struct ContentView: View {
                     let newFen = FenSerialization.default.serialize(position: chessboardModel.game.position)
                     chessboardModel.setFen(newFen)
                     
-                    // Check/checkmate
-                    var utteranceString = "\(moveText) played"
-                    if chessboardModel.game.isMate {
-                        utteranceString += ". Checkmate!"
-                    } else if chessboardModel.game.isCheck {
-                        utteranceString += ". Check!"
-                    }
-                    
                     // Speak move
-                    let utterance = AVSpeechUtterance(string: utteranceString)
-                    utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-                    speechSynthesizer.speak(utterance)
+                    let moveUtterance = AVSpeechUtterance(string: "\(moveText) played")
+                    moveUtterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+                    speechSynthesizer.speak(moveUtterance)
+                    
+                    // Speak checkmate or check (never both)
+                    if chessboardModel.game.isMate {
+                        let checkmateUtterance = AVSpeechUtterance(string: "Checkmate!")
+                        checkmateUtterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+                        checkmateUtterance.postUtteranceDelay = 0.4
+                        speechSynthesizer.speak(checkmateUtterance)
+                    } else if chessboardModel.game.isCheck {
+                        let checkUtterance = AVSpeechUtterance(string: "Check!")
+                        checkUtterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+                        checkUtterance.postUtteranceDelay = 0.4
+                        speechSynthesizer.speak(checkUtterance)
+                    }
                 }
                 .frame(width: 400, height: 400)
                 .padding()
@@ -97,17 +102,23 @@ struct ContentView: View {
                             let newFen = FenSerialization.default.serialize(position: chessboardModel.game.position)
                             chessboardModel.setFen(newFen)
                             
-                            // Speak move and check/checkmate
-                            var utteranceString = "\(moveText) played"
-                            if chessboardModel.game.isMate {
-                                utteranceString += ". Checkmate!"
-                            } else if chessboardModel.game.isCheck {
-                                utteranceString += ". Check!"
-                            }
+                            // Speak move
+                            let moveUtterance = AVSpeechUtterance(string: "\(moveText) played")
+                            moveUtterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+                            speechSynthesizer.speak(moveUtterance)
                             
-                            let utterance = AVSpeechUtterance(string: utteranceString)
-                            utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-                            speechSynthesizer.speak(utterance)
+                            // Speak checkmate or check
+                            if chessboardModel.game.isMate {
+                                let checkmateUtterance = AVSpeechUtterance(string: "Checkmate!")
+                                checkmateUtterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+                                checkmateUtterance.postUtteranceDelay = 0.4
+                                speechSynthesizer.speak(checkmateUtterance)
+                            } else if chessboardModel.game.isCheck {
+                                let checkUtterance = AVSpeechUtterance(string: "Check!")
+                                checkUtterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+                                checkUtterance.postUtteranceDelay = 0.4
+                                speechSynthesizer.speak(checkUtterance)
+                            }
                             
                             pendingMove = nil
                         } else if recognized.contains("no") {
@@ -120,7 +131,7 @@ struct ContentView: View {
                         // Parse new move
                         if let move = MoveParser(game: chessboardModel.game).parse(speechManager.recognizedText) {
                             pendingMove = move
-                            let moveText = "\(move.from) to \(move.to)"
+                            let moveText = speechManager.recognizedText.trimmingCharacters(in: .whitespacesAndNewlines)
                             let utterance = AVSpeechUtterance(string: "\(moveText). Is that the move you would like to play?")
                             utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
                             speechSynthesizer.speak(utterance)
