@@ -49,6 +49,25 @@ struct ContentView: View {
                 .frame(width: 400, height: 400)
                 .padding()
             
+            // MARK: - Recognized Move Display
+            if let moveText = pendingMoveText {
+                Text("Move: \(moveText)")
+                    .font(.headline)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.gray.opacity(0.2))
+                    .cornerRadius(8)
+                    .padding(.horizontal, 20)
+            } else {
+                Text("Move: ")
+                    .font(.headline)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.gray.opacity(0.2))
+                    .cornerRadius(8)
+                    .padding(.horizontal, 20)
+            }
+
             Spacer()
             
             // Bottom toolbar
