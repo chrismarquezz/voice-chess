@@ -19,6 +19,7 @@ struct ContentView: View {
     
     // Pending move awaiting confirmation
     @State private var pendingMove: Move? = nil
+    @State private var pendingMoveText: String? = nil
     
     // Track move history as algebraic strings
     @State private var moveHistory: [String] = []
@@ -31,6 +32,7 @@ struct ContentView: View {
                 .onMove { move, isLegal, from, to, _, promotionPiece in
                     guard isLegal else { return }
                     
+                    // This block executes direct board moves (manual drags, if any)
                     let moveText = "\(from) to \(to)"
                     moveHistory.append(moveText)
                     
@@ -40,22 +42,9 @@ struct ContentView: View {
                     chessboardModel.setFen(newFen)
                     
                     // Speak move
-                    let moveUtterance = AVSpeechUtterance(string: "\(moveText) played")
-                    moveUtterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-                    speechSynthesizer.speak(moveUtterance)
-                    
-                    // Speak checkmate or check (never both)
-                    if chessboardModel.game.isMate {
-                        let checkmateUtterance = AVSpeechUtterance(string: "Checkmate!")
-                        checkmateUtterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-                        checkmateUtterance.postUtteranceDelay = 0.4
-                        speechSynthesizer.speak(checkmateUtterance)
-                    } else if chessboardModel.game.isCheck {
-                        let checkUtterance = AVSpeechUtterance(string: "Check!")
-                        checkUtterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-                        checkUtterance.postUtteranceDelay = 0.4
-                        speechSynthesizer.speak(checkUtterance)
-                    }
+                    let utterance = AVSpeechUtterance(string: "\(moveText) played")
+                    utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+                    speechSynthesizer.speak(utterance)
                 }
                 .frame(width: 400, height: 400)
                 .padding()
@@ -80,6 +69,7 @@ struct ContentView: View {
                     speechManager.stopListening()
                     
                     let recognized = speechManager.recognizedText.lowercased()
+                    print("Recognized text: \(recognized)") // debug console output
                     
                     // Check if user asked to hear recent moves
                     if recognized.contains("show last") {
@@ -92,9 +82,8 @@ struct ContentView: View {
                     }
                     
                     // Voice confirmation flow
-                    if let moveToConfirm = pendingMove {
+                    if let moveToConfirm = pendingMove, let moveText = pendingMoveText {
                         if recognized.contains("yes") {
-                            let moveText = "\(moveToConfirm.from) to \(moveToConfirm.to)"
                             moveHistory.append(moveText)
                             
                             // Execute move
@@ -102,12 +91,12 @@ struct ContentView: View {
                             let newFen = FenSerialization.default.serialize(position: chessboardModel.game.position)
                             chessboardModel.setFen(newFen)
                             
-                            // Speak move
+                            // Speak move using the same friendly text
                             let moveUtterance = AVSpeechUtterance(string: "\(moveText) played")
                             moveUtterance.voice = AVSpeechSynthesisVoice(language: "en-US")
                             speechSynthesizer.speak(moveUtterance)
                             
-                            // Speak checkmate or check
+                            // Speak check/checkmate
                             if chessboardModel.game.isMate {
                                 let checkmateUtterance = AVSpeechUtterance(string: "Checkmate!")
                                 checkmateUtterance.voice = AVSpeechSynthesisVoice(language: "en-US")
@@ -121,22 +110,26 @@ struct ContentView: View {
                             }
                             
                             pendingMove = nil
+                            pendingMoveText = nil
+                            
                         } else if recognized.contains("no") {
                             pendingMove = nil
-                            let utterance = AVSpeechUtterance(string: "Move canceled. Please try again.")
+                            pendingMoveText = nil
+                            let utterance = AVSpeechUtterance(string: "Move canceled.")
                             utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
                             speechSynthesizer.speak(utterance)
                         }
                     } else {
                         // Parse new move
-                        if let move = MoveParser(game: chessboardModel.game).parse(speechManager.recognizedText) {
+                        if let move = MoveParser(game: chessboardModel.game).parse(recognized) {
                             pendingMove = move
-                            let moveText = speechManager.recognizedText.trimmingCharacters(in: .whitespacesAndNewlines)
-                            let utterance = AVSpeechUtterance(string: "\(moveText). Is that the move you would like to play?")
+                            pendingMoveText = recognized // keep friendly string
+                            
+                            let utterance = AVSpeechUtterance(string: "\(pendingMoveText!). Say yes to confirm move, or no to cancel.")
                             utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
                             speechSynthesizer.speak(utterance)
                         } else {
-                            let utterance = AVSpeechUtterance(string: "Could not recognize a valid move. Please try again.")
+                            let utterance = AVSpeechUtterance(string: "Could not recognize a valid move.")
                             utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
                             speechSynthesizer.speak(utterance)
                         }
