@@ -40,7 +40,7 @@ struct ContentView: View {
                     utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
                     speechSynthesizer.speak(utterance)
                 }
-                .frame(width: 400, height: 400)
+                .frame(width: 350, height: 350)
                 .padding()
             
             // MARK: - Move display
@@ -90,8 +90,10 @@ struct ContentView: View {
                     speak("Checkmate!")
                 } else if chessboardModel.game.isCheck {
                     speak("Check!")
+                } else if chessboardModel.game.legalMoves.isEmpty {
+                    speak("Stalemate!")
                 }
-                
+
                 pendingMove = nil
                 pendingMoveText = nil
             } else if recognized.contains("no") {
