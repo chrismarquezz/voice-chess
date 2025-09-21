@@ -48,6 +48,9 @@ struct ContentView: View {
             
             Spacer()
             
+            // MARK: - Preset Positions Buttons
+                PresetPositionsView(chessboardModel: $chessboardModel, speak: speak)
+            
             // MARK: - Toolbar
             ToolbarView(
                 startListening: { speechManager.startListening() },
