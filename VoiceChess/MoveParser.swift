@@ -19,7 +19,7 @@ struct MoveParser {
         // Normalize command
         var lowercased = command.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // Replace common homophones
+        // Replace homophones
         let homophones: [String: String] = [
             "night": "knight",
             "nite": "knight",

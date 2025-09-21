@@ -17,6 +17,10 @@ struct ContentView: View {
     @State private var pendingMove: Move? = nil
     @State private var pendingMoveText: String? = nil
     @State private var moveHistory: [String] = []
+    @State private var gameOver: Bool = false
+    
+    // Track position repetition (FEN → count)
+    @State private var positionHistory: [String: Int] = [:]
     
     let speechSynthesizer = AVSpeechSynthesizer()
     
@@ -26,6 +30,7 @@ struct ContentView: View {
             // MARK: - Chessboard
             Chessboard(chessboardModel: chessboardModel)
                 .onMove { move, isLegal, from, to, _, promotionPiece in
+                    guard !gameOver else { return }   // prevent play if over
                     guard isLegal else { return }
                     
                     // Normal move
@@ -35,6 +40,9 @@ struct ContentView: View {
                     chessboardModel.game.make(move: move)
                     let newFen = FenSerialization.default.serialize(position: chessboardModel.game.position)
                     chessboardModel.setFen(newFen)
+                    
+                    // --- TRACK REPETITION ---
+                    trackPosition(newFen)
                     
                     let utterance = AVSpeechUtterance(string: "\(moveText) played")
                     utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
@@ -49,7 +57,7 @@ struct ContentView: View {
             Spacer()
             
             // MARK: - Preset Positions Buttons
-                PresetPositionsView(chessboardModel: $chessboardModel, speak: speak)
+            PresetPositionsView(chessboardModel: $chessboardModel, speak: speak)
             
             // MARK: - Toolbar
             ToolbarView(
@@ -63,6 +71,7 @@ struct ContentView: View {
     
     // MARK: - Voice stop handling
     func handleStopListening() {
+        guard !gameOver else { return }   // prevent voice moves if over
         speechManager.stopListening()
         let recognized = speechManager.recognizedText.lowercased()
         print("Recognized text: \(recognized)")
@@ -86,17 +95,25 @@ struct ContentView: View {
                 let newFen = FenSerialization.default.serialize(position: chessboardModel.game.position)
                 chessboardModel.setFen(newFen)
                 
-                // FIX: speak the friendly text instead of move.from -> move.to
                 speak("\(moveText) played")
                 
+                // --- GAME END CONDITIONS ---
                 if chessboardModel.game.isMate {
                     speak("Checkmate!")
+                    gameOver = true
                 } else if chessboardModel.game.isCheck {
                     speak("Check!")
                 } else if chessboardModel.game.legalMoves.isEmpty {
                     speak("Stalemate!")
+                    gameOver = true
+                } else if chessboardModel.game.position.counter.halfMoves >= 100 {
+                    speak("Draw by fifty-move rule!")
+                    gameOver = true
                 }
-
+                
+                // --- TRACK REPETITION ---
+                trackPosition(newFen)
+                
                 pendingMove = nil
                 pendingMoveText = nil
             } else if recognized.contains("no") {
@@ -121,6 +138,8 @@ struct ContentView: View {
         let startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         chessboardModel.setFen(startFen)
         moveHistory.removeAll()
+        gameOver = false   // <--- reset
+        positionHistory.removeAll() // reset repetition tracking
         speak("Board reset")
     }
     
@@ -140,6 +159,21 @@ struct ContentView: View {
         let recentMoves = moveHistory.suffix(count)
         for move in recentMoves {
             speak(move)
+        }
+    }
+    
+    // MARK: - Draw helpers
+    func trackPosition(_ fen: String) {
+        // Normalize FEN (ignore halfmove + fullmove counters for repetition tracking)
+        let components = fen.split(separator: " ")
+        if components.count >= 4 {
+            let normalizedFen = components[0...3].joined(separator: " ")
+            positionHistory[normalizedFen, default: 0] += 1
+            
+            if positionHistory[normalizedFen] == 3 {
+                speak("Draw by threefold repetition!")
+                gameOver = true
+            }
         }
     }
 }
