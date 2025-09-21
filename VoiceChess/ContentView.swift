@@ -14,34 +14,28 @@ struct ContentView: View {
     
     @StateObject var speechManager = SpeechManager()
     
-    // Speech synthesizer
-    let speechSynthesizer = AVSpeechSynthesizer()
-    
-    // Pending move awaiting confirmation
     @State private var pendingMove: Move? = nil
     @State private var pendingMoveText: String? = nil
-    
-    // Track move history as algebraic strings
     @State private var moveHistory: [String] = []
+    
+    let speechSynthesizer = AVSpeechSynthesizer()
     
     var body: some View {
         VStack(spacing: 20) {
             
-            // Chessboard
+            // MARK: - Chessboard
             Chessboard(chessboardModel: chessboardModel)
                 .onMove { move, isLegal, from, to, _, promotionPiece in
                     guard isLegal else { return }
                     
-                    // This block executes direct board moves (manual drags, if any)
+                    // Normal move
                     let moveText = "\(from) to \(to)"
                     moveHistory.append(moveText)
                     
-                    // Execute move
                     chessboardModel.game.make(move: move)
                     let newFen = FenSerialization.default.serialize(position: chessboardModel.game.position)
                     chessboardModel.setFen(newFen)
                     
-                    // Speak move
                     let utterance = AVSpeechUtterance(string: "\(moveText) played")
                     utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
                     speechSynthesizer.speak(utterance)
@@ -49,164 +43,97 @@ struct ContentView: View {
                 .frame(width: 400, height: 400)
                 .padding()
             
-            // MARK: - Recognized Move Display
-            if let moveText = pendingMoveText {
-                Text("Move: \(moveText)")
-                    .font(.headline)
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(8)
-                    .padding(.horizontal, 20)
-            } else {
-                Text("Move: ")
-                    .font(.headline)
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(8)
-                    .padding(.horizontal, 20)
-            }
-
+            // MARK: - Move display
+            MoveDisplayView(moveText: pendingMoveText)
+            
             Spacer()
             
-            // Bottom toolbar
-            HStack(spacing: 40) {
-                
-                // Start Listening
-                Button(action: {
-                    speechManager.startListening()
-                }) {
-                    Image(systemName: "mic.fill")
-                        .resizable()
-                        .frame(width: 30, height: 30)
-                        .foregroundColor(.green)
-                }
-                
-                // Stop Listening / process voice
-                Button(action: {
-                    speechManager.stopListening()
-                    
-                    let recognized = speechManager.recognizedText.lowercased()
-                    print("Recognized text: \(recognized)") // debug console output
-                    
-                    // Check if user asked to hear recent moves
-                    if recognized.contains("show last") {
-                        if let number = recognized.extractNumber() {
-                            speakLastMoves(number)
-                        } else {
-                            speakLastMoves(5) // default last 5 moves
-                        }
-                        return
-                    }
-                    
-                    // Voice confirmation flow
-                    if let moveToConfirm = pendingMove, let moveText = pendingMoveText {
-                        if recognized.contains("yes") {
-                            moveHistory.append(moveText)
-                            
-                            // Execute move
-                            chessboardModel.game.make(move: moveToConfirm)
-                            let newFen = FenSerialization.default.serialize(position: chessboardModel.game.position)
-                            chessboardModel.setFen(newFen)
-                            
-                            // Speak move using the same friendly text
-                            let moveUtterance = AVSpeechUtterance(string: "\(moveText) played")
-                            moveUtterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-                            speechSynthesizer.speak(moveUtterance)
-                            
-                            // Speak check/checkmate
-                            if chessboardModel.game.isMate {
-                                let checkmateUtterance = AVSpeechUtterance(string: "Checkmate!")
-                                checkmateUtterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-                                checkmateUtterance.postUtteranceDelay = 0.4
-                                speechSynthesizer.speak(checkmateUtterance)
-                            } else if chessboardModel.game.isCheck {
-                                let checkUtterance = AVSpeechUtterance(string: "Check!")
-                                checkUtterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-                                checkUtterance.postUtteranceDelay = 0.4
-                                speechSynthesizer.speak(checkUtterance)
-                            }
-                            
-                            pendingMove = nil
-                            pendingMoveText = nil
-                            
-                        } else if recognized.contains("no") {
-                            pendingMove = nil
-                            pendingMoveText = nil
-                            let utterance = AVSpeechUtterance(string: "Move canceled.")
-                            utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-                            speechSynthesizer.speak(utterance)
-                        }
-                    } else {
-                        // Parse new move
-                        pendingMoveText = recognized // always display what user said
-
-                        if let move = MoveParser(game: chessboardModel.game).parse(recognized) {
-                            pendingMove = move
-                            
-                            let utterance = AVSpeechUtterance(string: "\(pendingMoveText!). Say yes to confirm move, or no to cancel.")
-                            utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-                            speechSynthesizer.speak(utterance)
-                        } else {
-                            let utterance = AVSpeechUtterance(string: "Could not recognize a valid move.")
-                            utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-                            speechSynthesizer.speak(utterance)
-                        }
-
-                    }
-                    
-                }) {
-                    Image(systemName: "stop.fill")
-                        .resizable()
-                        .frame(width: 30, height: 30)
-                        .foregroundColor(.red)
-                }
-                
-                // Reset Board
-                Button(action: {
-                    let startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-                    chessboardModel.setFen(startFen)
-                    moveHistory.removeAll()
-                    
-                    let utterance = AVSpeechUtterance(string: "Board reset")
-                    utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-                    speechSynthesizer.speak(utterance)
-                }) {
-                    Image(systemName: "arrow.clockwise")
-                        .resizable()
-                        .frame(width: 30, height: 30)
-                        .foregroundColor(.blue)
-                }
-                
-                // Flip Board
-                Button(action: {
-                    chessboardModel.perspective = chessboardModel.perspective == .white ? .black : .white
-                    let utterance = AVSpeechUtterance(string: "Board flip")
-                    utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-                    speechSynthesizer.speak(utterance)
-
-                }) {
-                    Image(systemName: "arrow.2.circlepath")
-                        .resizable()
-                        .frame(width: 30, height: 30)
-                        .foregroundColor(.orange)
-                }
-            }
-            .padding()
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(12)
-            .padding(.bottom, 30)
+            // MARK: - Toolbar
+            ToolbarView(
+                startListening: { speechManager.startListening() },
+                stopListening: handleStopListening,
+                resetBoard: resetBoard,
+                flipBoard: flipBoard
+            )
         }
     }
     
-    // MARK: - Speak last moves
-    private func speakLastMoves(_ count: Int) {
+    // MARK: - Voice stop handling
+    func handleStopListening() {
+        speechManager.stopListening()
+        let recognized = speechManager.recognizedText.lowercased()
+        print("Recognized text: \(recognized)")
+        
+        // Show last moves
+        if recognized.contains("show last") {
+            if let number = recognized.extractNumber() {
+                speakLastMoves(number)
+            } else {
+                speakLastMoves(5)
+            }
+            return
+        }
+        
+        // Handle confirmation of normal move
+        if let moveToConfirm = pendingMove, let moveText = pendingMoveText {
+            if recognized.contains("yes") {
+                moveHistory.append(moveText)
+                
+                chessboardModel.game.make(move: moveToConfirm)
+                let newFen = FenSerialization.default.serialize(position: chessboardModel.game.position)
+                chessboardModel.setFen(newFen)
+                
+                speak("\(moveText) played")
+                
+                if chessboardModel.game.isMate {
+                    speak("Checkmate!")
+                } else if chessboardModel.game.isCheck {
+                    speak("Check!")
+                }
+                
+                pendingMove = nil
+                pendingMoveText = nil
+            } else if recognized.contains("no") {
+                pendingMove = nil
+                pendingMoveText = nil
+                speak("Move canceled.")
+            }
+        } else {
+            // Parse new move
+            pendingMoveText = recognized
+            if let move = MoveParser(game: chessboardModel.game).parse(recognized) {
+                pendingMove = move
+                speak("\(pendingMoveText!). Say yes to confirm move, or no to cancel.")
+            } else {
+                speak("Could not recognize a valid move.")
+            }
+        }
+    }
+    
+    // MARK: - Reset / flip
+    func resetBoard() {
+        let startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        chessboardModel.setFen(startFen)
+        moveHistory.removeAll()
+        speak("Board reset")
+    }
+    
+    func flipBoard() {
+        chessboardModel.perspective = chessboardModel.perspective == .white ? .black : .white
+        speak("Board flip")
+    }
+    
+    // MARK: - Speech helpers
+    func speak(_ text: String) {
+        let utterance = AVSpeechUtterance(string: text)
+        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        speechSynthesizer.speak(utterance)
+    }
+    
+    func speakLastMoves(_ count: Int) {
         let recentMoves = moveHistory.suffix(count)
         for move in recentMoves {
-            let utterance = AVSpeechUtterance(string: move)
-            utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-            speechSynthesizer.speak(utterance)
+            speak(move)
         }
     }
 }
@@ -216,9 +143,7 @@ extension String {
     func extractNumber() -> Int? {
         let words = self.components(separatedBy: " ")
         for word in words {
-            if let num = Int(word) {
-                return num
-            }
+            if let num = Int(word) { return num }
         }
         return nil
     }
