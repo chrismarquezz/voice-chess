@@ -83,6 +83,7 @@ struct ContentView: View {
                 let newFen = FenSerialization.default.serialize(position: chessboardModel.game.position)
                 chessboardModel.setFen(newFen)
                 
+                // FIX: speak the friendly text instead of move.from -> move.to
                 speak("\(moveText) played")
                 
                 if chessboardModel.game.isMate {
@@ -103,13 +104,13 @@ struct ContentView: View {
             pendingMoveText = recognized
             if let move = MoveParser(game: chessboardModel.game).parse(recognized) {
                 pendingMove = move
-                speak("\(pendingMoveText!). Say yes to confirm move, or no to cancel.")
+                speak("\(pendingMoveText!). Yes to confirm, no to cancel.")
             } else {
                 speak("Could not recognize a valid move.")
             }
         }
     }
-    
+
     // MARK: - Reset / flip
     func resetBoard() {
         let startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
