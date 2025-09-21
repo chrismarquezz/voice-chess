@@ -140,9 +140,10 @@ struct ContentView: View {
                         }
                     } else {
                         // Parse new move
+                        pendingMoveText = recognized // always display what user said
+
                         if let move = MoveParser(game: chessboardModel.game).parse(recognized) {
                             pendingMove = move
-                            pendingMoveText = recognized // keep friendly string
                             
                             let utterance = AVSpeechUtterance(string: "\(pendingMoveText!). Say yes to confirm move, or no to cancel.")
                             utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
@@ -152,6 +153,7 @@ struct ContentView: View {
                             utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
                             speechSynthesizer.speak(utterance)
                         }
+
                     }
                     
                 }) {
@@ -180,6 +182,10 @@ struct ContentView: View {
                 // Flip Board
                 Button(action: {
                     chessboardModel.perspective = chessboardModel.perspective == .white ? .black : .white
+                    let utterance = AVSpeechUtterance(string: "Board flip")
+                    utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+                    speechSynthesizer.speak(utterance)
+
                 }) {
                     Image(systemName: "arrow.2.circlepath")
                         .resizable()
