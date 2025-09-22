@@ -1,3 +1,10 @@
+//
+//  ContentView.swift
+//  VoiceChess
+//
+//  Created by Chris Marquez on 9/21/25.
+//
+
 import SwiftUI
 import ChessboardKit
 import ChessKit
@@ -19,9 +26,6 @@ struct ContentView: View {
     @State private var moveHistory: [String] = []
     @State private var gameOver: Bool = false
     
-    // Track position repetition (FEN → count)
-    @State private var positionHistory: [String: Int] = [:]
-    
     let speechSynthesizer = AVSpeechSynthesizer()
     
     var body: some View {
@@ -33,20 +37,13 @@ struct ContentView: View {
                     guard !gameOver else { return }   // prevent play if over
                     guard isLegal else { return }
                     
-                    // Normal move
                     let moveText = "\(from) to \(to)"
-                    moveHistory.append(moveText)
-                    
-                    chessboardModel.game.make(move: move)
-                    let newFen = FenSerialization.default.serialize(position: chessboardModel.game.position)
-                    chessboardModel.setFen(newFen)
-                    
-                    // --- TRACK REPETITION ---
-                    trackPosition(newFen)
-                    
-                    let utterance = AVSpeechUtterance(string: "\(moveText) played")
-                    utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-                    speechSynthesizer.speak(utterance)
+                    MoveHandler.handleMove(move: move,
+                                           moveText: moveText,
+                                           chessboardModel: &chessboardModel,
+                                           moveHistory: &moveHistory,
+                                           gameOver: &gameOver,
+                                           speechSynthesizer: speechSynthesizer)
                 }
                 .frame(width: 350, height: 350)
                 .padding()
@@ -74,52 +71,29 @@ struct ContentView: View {
         guard !gameOver else { return }   // prevent voice moves if over
         speechManager.stopListening()
         let recognized = speechManager.recognizedText.lowercased()
-        print("Recognized text: \(recognized)")
         
         // Show last moves
         if recognized.contains("show last") {
-            if let number = recognized.extractNumber() {
-                speakLastMoves(number)
-            } else {
-                speakLastMoves(5)
-            }
+            let count = recognized.extractNumber() ?? 5
+            speakLastMoves(count)
             return
         }
         
         // Handle confirmation of normal move
         if let moveToConfirm = pendingMove, let moveText = pendingMoveText {
             if recognized.contains("yes") {
-                moveHistory.append(moveText)
-                
-                chessboardModel.game.make(move: moveToConfirm)
-                let newFen = FenSerialization.default.serialize(position: chessboardModel.game.position)
-                chessboardModel.setFen(newFen)
-                
-                speak("\(moveText) played")
-                
-                // --- GAME END CONDITIONS ---
-                if chessboardModel.game.isMate {
-                    speak("Checkmate!")
-                    gameOver = true
-                } else if chessboardModel.game.isCheck {
-                    speak("Check!")
-                } else if chessboardModel.game.legalMoves.isEmpty {
-                    speak("Stalemate!")
-                    gameOver = true
-                } else if chessboardModel.game.position.counter.halfMoves >= 100 {
-                    speak("Draw by fifty-move rule!")
-                    gameOver = true
-                }
-                
-                // --- TRACK REPETITION ---
-                trackPosition(newFen)
-                
+                MoveHandler.handleMove(move: moveToConfirm,
+                                       moveText: moveText,
+                                       chessboardModel: &chessboardModel,
+                                       moveHistory: &moveHistory,
+                                       gameOver: &gameOver,
+                                       speechSynthesizer: speechSynthesizer)
                 pendingMove = nil
                 pendingMoveText = nil
             } else if recognized.contains("no") {
                 pendingMove = nil
                 pendingMoveText = nil
-                speak("Move canceled.")
+                speak("Move canceled")
             }
         } else {
             // Parse new move
@@ -132,14 +106,13 @@ struct ContentView: View {
             }
         }
     }
-
+    
     // MARK: - Reset / flip
     func resetBoard() {
         let startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         chessboardModel.setFen(startFen)
         moveHistory.removeAll()
-        gameOver = false   // <--- reset
-        positionHistory.removeAll() // reset repetition tracking
+        gameOver = false
         speak("Board reset")
     }
     
@@ -159,21 +132,6 @@ struct ContentView: View {
         let recentMoves = moveHistory.suffix(count)
         for move in recentMoves {
             speak(move)
-        }
-    }
-    
-    // MARK: - Draw helpers
-    func trackPosition(_ fen: String) {
-        // Normalize FEN (ignore halfmove + fullmove counters for repetition tracking)
-        let components = fen.split(separator: " ")
-        if components.count >= 4 {
-            let normalizedFen = components[0...3].joined(separator: " ")
-            positionHistory[normalizedFen, default: 0] += 1
-            
-            if positionHistory[normalizedFen] == 3 {
-                speak("Draw by threefold repetition!")
-                gameOver = true
-            }
         }
     }
 }
