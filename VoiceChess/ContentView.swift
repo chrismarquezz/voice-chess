@@ -12,7 +12,6 @@ import AVFoundation
 
 struct ContentView: View {
     
-    // MARK: - State
     @State var chessboardModel = ChessboardModel(
         fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
         perspective: .white,
@@ -20,43 +19,41 @@ struct ContentView: View {
     )
     
     @StateObject var speechManager = SpeechManager()
+    @StateObject var gameOverManager = GameOverManager()
     
     @State private var pendingMove: Move? = nil
     @State private var pendingMoveText: String? = nil
     @State private var moveHistory: [String] = []
-    @State private var gameOver: Bool = false
     
     let speechSynthesizer = AVSpeechSynthesizer()
     
     var body: some View {
         VStack(spacing: 20) {
             
-            // MARK: - Chessboard
             Chessboard(chessboardModel: chessboardModel)
                 .onMove { move, isLegal, from, to, _, promotionPiece in
-                    guard !gameOver else { return }   // prevent play if over
                     guard isLegal else { return }
+                    guard !gameOverManager.gameOver else { return }
                     
                     let moveText = "\(from) to \(to)"
-                    MoveHandler.handleMove(move: move,
-                                           moveText: moveText,
-                                           chessboardModel: &chessboardModel,
-                                           moveHistory: &moveHistory,
-                                           gameOver: &gameOver,
-                                           speechSynthesizer: speechSynthesizer)
+                    MoveHandler.handleMove(
+                        move: move,
+                        moveText: moveText,
+                        chessboardModel: &chessboardModel,
+                        moveHistory: &moveHistory,
+                        gameOverManager: gameOverManager,
+                        speechSynthesizer: speechSynthesizer
+                    )
                 }
                 .frame(width: 350, height: 350)
                 .padding()
             
-            // MARK: - Move display
             MoveDisplayView(moveText: pendingMoveText)
             
             Spacer()
             
-            // MARK: - Preset Positions Buttons
             PresetPositionsView(chessboardModel: $chessboardModel, speak: speak)
             
-            // MARK: - Toolbar
             ToolbarView(
                 startListening: { speechManager.startListening() },
                 stopListening: handleStopListening,
@@ -64,30 +61,40 @@ struct ContentView: View {
                 flipBoard: flipBoard
             )
         }
+        .alert(isPresented: $gameOverManager.gameOver) {
+            Alert(
+                title: Text("Game Over"),
+                message: Text(gameOverManager.gameResult),
+                dismissButton: .default(Text("OK")) {
+                }
+            )
+        }
     }
     
     // MARK: - Voice stop handling
     func handleStopListening() {
-        guard !gameOver else { return }   // prevent voice moves if over
+        guard !gameOverManager.gameOver else { return }
         speechManager.stopListening()
         let recognized = speechManager.recognizedText.lowercased()
         
-        // Show last moves
         if recognized.contains("show last") {
             let count = recognized.extractNumber() ?? 5
-            speakLastMoves(count)
+            for move in moveHistory.suffix(count) {
+                speak(move)
+            }
             return
         }
         
-        // Handle confirmation of normal move
         if let moveToConfirm = pendingMove, let moveText = pendingMoveText {
             if recognized.contains("yes") {
-                MoveHandler.handleMove(move: moveToConfirm,
-                                       moveText: moveText,
-                                       chessboardModel: &chessboardModel,
-                                       moveHistory: &moveHistory,
-                                       gameOver: &gameOver,
-                                       speechSynthesizer: speechSynthesizer)
+                MoveHandler.handleMove(
+                    move: moveToConfirm,
+                    moveText: moveText,
+                    chessboardModel: &chessboardModel,
+                    moveHistory: &moveHistory,
+                    gameOverManager: gameOverManager,
+                    speechSynthesizer: speechSynthesizer
+                )
                 pendingMove = nil
                 pendingMoveText = nil
             } else if recognized.contains("no") {
@@ -96,7 +103,6 @@ struct ContentView: View {
                 speak("Move canceled")
             }
         } else {
-            // Parse new move
             pendingMoveText = recognized
             if let move = MoveParser(game: chessboardModel.game).parse(recognized) {
                 pendingMove = move
@@ -107,13 +113,10 @@ struct ContentView: View {
         }
     }
     
-    // MARK: - Reset / flip
     func resetBoard() {
         let startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         chessboardModel.setFen(startFen)
         moveHistory.removeAll()
-        gameOver = false
-        speak("Board reset")
     }
     
     func flipBoard() {
@@ -121,22 +124,13 @@ struct ContentView: View {
         speak("Board flip")
     }
     
-    // MARK: - Speech helpers
     func speak(_ text: String) {
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
         speechSynthesizer.speak(utterance)
     }
-    
-    func speakLastMoves(_ count: Int) {
-        let recentMoves = moveHistory.suffix(count)
-        for move in recentMoves {
-            speak(move)
-        }
-    }
 }
 
-// Helper to extract numbers from spoken text like "show last 3 moves"
 extension String {
     func extractNumber() -> Int? {
         let words = self.components(separatedBy: " ")

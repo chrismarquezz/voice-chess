@@ -11,14 +11,14 @@ import AVFoundation
 
 struct MoveHandler {
     
-    // Handles moves made via chessboard drag/tap
-    static func handleMove(move: Move,
-                           moveText: String,
-                           chessboardModel: inout ChessboardModel,
-                           moveHistory: inout [String],
-                           gameOver: inout Bool,
-                           speechSynthesizer: AVSpeechSynthesizer) {
-        
+    static func handleMove(
+        move: Move,
+        moveText: String,
+        chessboardModel: inout ChessboardModel,
+        moveHistory: inout [String],
+        gameOverManager: GameOverManager,
+        speechSynthesizer: AVSpeechSynthesizer
+    ) {
         moveHistory.append(moveText)
         chessboardModel.game.make(move: move)
         let newFen = FenSerialization.default.serialize(position: chessboardModel.game.position)
@@ -26,33 +26,39 @@ struct MoveHandler {
         
         speak(moveText, synthesizer: speechSynthesizer)
         
-        checkGameEnd(chessboardModel: &chessboardModel,
-                     gameOver: &gameOver,
-                     speechSynthesizer: speechSynthesizer)
+        checkGameEnd(
+            chessboardModel: chessboardModel,
+            gameOverManager: gameOverManager,
+            synthesizer: speechSynthesizer
+        )
     }
     
-    // Announces check, checkmate, stalemate, 50-move draw, or insufficient material
-    static func checkGameEnd(chessboardModel: inout ChessboardModel,
-                             gameOver: inout Bool,
-                             speechSynthesizer: AVSpeechSynthesizer) {
-        
+    static func checkGameEnd(
+        chessboardModel: ChessboardModel,
+        gameOverManager: GameOverManager,
+        synthesizer: AVSpeechSynthesizer
+    ) {
         let game = chessboardModel.game
         let board = game.position.board
         
         if game.isMate {
-            speak("Checkmate!", synthesizer: speechSynthesizer)
-            gameOver = true
+            let result = "Checkmate!"
+            speak(result, synthesizer: synthesizer)
+            gameOverManager.endGame(with: result)
         } else if game.isCheck {
-            speak("Check!", synthesizer: speechSynthesizer)
+            speak("Check!", synthesizer: synthesizer)
         } else if game.legalMoves.isEmpty {
-            speak("Stalemate!", synthesizer: speechSynthesizer)
-            gameOver = true
+            let result = "Stalemate!"
+            speak(result, synthesizer: synthesizer)
+            gameOverManager.endGame(with: result)
         } else if game.position.counter.halfMoves >= 100 {
-            speak("Draw by fifty-move rule!", synthesizer: speechSynthesizer)
-            gameOver = true
+            let result = "Draw by 50-move rule!"
+            speak(result, synthesizer: synthesizer)
+            gameOverManager.endGame(with: result)
         } else if DrawHelper.isInsufficientMaterial(board: board) {
-            speak("Draw by insufficient material!", synthesizer: speechSynthesizer)
-            gameOver = true
+            let result = "Draw by insufficient material!"
+            speak(result, synthesizer: synthesizer)
+            gameOverManager.endGame(with: result)
         }
     }
     
