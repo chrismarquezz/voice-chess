@@ -106,7 +106,7 @@ struct ContentView: View {
             pendingMoveText = recognized
             if let move = MoveParser(game: chessboardModel.game).parse(recognized) {
                 pendingMove = move
-                speak("\(pendingMoveText!). Yes to confirm, no to cancel.")
+                speak("\(pendingMoveText!). Yes or no.")
             } else {
                 speak("Could not recognize a valid move.")
             }
