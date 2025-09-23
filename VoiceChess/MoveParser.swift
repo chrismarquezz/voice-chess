@@ -83,17 +83,34 @@ struct MoveParser {
         }
 
         
-        // --- Handle pawn moves (keep previous working behavior) ---
+        // --- Handle pawn moves (with promotion support) ---
+        let promotionMap: [String: PieceKind] = [
+            "queen": .queen,
+            "rook": .rook,
+            "bishop": .bishop,
+            "knight": .knight
+        ]
+
+        // Case 1: simple pawn move like "e4"
         if words.count == 1 {
             let toSquare = Square(coordinate: words[0])
-            
             let candidates = game.legalMoves.filter { move in
                 move.to == toSquare && game.position.board[move.from]?.kind == .pawn
             }
-            
             return candidates.first
         }
-        
+
+        // Case 2: promotion like "e8 queen"
+        if words.count == 2, let promotionPiece = promotionMap[words[1]] {
+            let toSquare = Square(coordinate: words[0])
+            let candidates = game.legalMoves.filter { move in
+                move.to == toSquare &&
+                game.position.board[move.from]?.kind == .pawn &&
+                move.promotion == promotionPiece
+            }
+            return candidates.first
+        }
+
         return nil
     }
     

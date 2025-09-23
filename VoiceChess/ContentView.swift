@@ -106,7 +106,23 @@ struct ContentView: View {
             pendingMoveText = recognized
             if let move = MoveParser(game: chessboardModel.game).parse(recognized) {
                 pendingMove = move
-                speak("\(pendingMoveText!). Yes or no.")
+                
+                if let promo = move.promotion {
+                    // Speak promotion confirmation
+                    let pieceName: String
+                    switch promo {
+                    case .queen: pieceName = "queen"
+                    case .rook: pieceName = "rook"
+                    case .bishop: pieceName = "bishop"
+                    case .knight: pieceName = "knight"
+                        
+                    default: pieceName = "unknown piece"
+                    }
+                    speak("\(pendingMoveText!). Promoting to \(pieceName). Yes or no.")
+                } else {
+                    speak("\(pendingMoveText!). Yes or no.")
+                }
+                
             } else {
                 speak("Could not recognize a valid move.")
             }
