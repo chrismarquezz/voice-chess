@@ -54,10 +54,10 @@ struct MenuView: View {
                     Text("Play")
                         .font(.title2)
                         .padding()
-                        .frame(width: 200)
+                        .frame(width: 150)
                         .background(Color.blue)
                         .foregroundColor(.white)
-                        .cornerRadius(12)
+                        .cornerRadius(30)
                 }
                 .opacity(showMenuContent ? 1 : 0)
                 .animation(.easeIn(duration: 0.5).delay(1.2), value: showMenuContent)
