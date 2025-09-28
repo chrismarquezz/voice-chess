@@ -5,7 +5,6 @@
 //  Created by Chris Marquez on 9/17/25.
 //
 
-
 import SwiftUI
 
 struct RootView: View {
@@ -13,7 +12,7 @@ struct RootView: View {
     
     var body: some View {
         if showGame {
-            ContentView()
+            BotVsBotView()
         } else {
             MenuView(onPlay: {
                 showGame = true

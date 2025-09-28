@@ -25,9 +25,11 @@ struct MoveParser {
             "nite": "knight",
             "nice": "knight",
             "nine": "knight",
+            "rookie": "rook",
             "brooke": "rook",
             "brook": "rook",
             "book": "rook",
+            "kin": "king",
         ]
         for (wrong, correct) in homophones {
             lowercased = lowercased.replacingOccurrences(of: wrong, with: correct)

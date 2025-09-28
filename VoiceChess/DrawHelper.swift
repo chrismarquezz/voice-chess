@@ -9,6 +9,7 @@ import ChessKit
 
 struct DrawHelper {
     
+    // MARK: - Insufficient Material
     static func isInsufficientMaterial(board: Board) -> Bool {
         let pieces = board.enumeratedPieces().map { $0.1 }
         
@@ -34,5 +35,19 @@ struct DrawHelper {
         
         return false
     }
+    
+    // MARK: - Threefold Repetition
+    static func normalizedFEN(from fen: String) -> String {
+        // FEN format:
+        // piece placement | active color | castling availability | en passant target | halfmove | fullmove
+        let parts = fen.split(separator: " ")
+        guard parts.count >= 4 else { return fen }
+        return parts[0...3].joined(separator: " ")
+    }
+    
+    static func isThreefoldRepetition(fen: String, positionCounts: inout [String: Int]) -> Bool {
+        let normalized = normalizedFEN(from: fen)
+        positionCounts[normalized, default: 0] += 1
+        return positionCounts[normalized]! >= 3
+    }
 }
-

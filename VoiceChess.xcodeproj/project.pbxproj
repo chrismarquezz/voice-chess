@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1D5DC9392E8362F60032BC3E /* ChessKitEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 1D5DC9382E8362F60032BC3E /* ChessKitEngine */; };
 		1DB4A39B2E78983C008BBB44 /* ChessboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1DB4A39A2E78983C008BBB44 /* ChessboardKit */; };
 /* End PBXBuildFile section */
 
@@ -56,6 +57,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1D5DC9392E8362F60032BC3E /* ChessKitEngine in Frameworks */,
 				1DB4A39B2E78983C008BBB44 /* ChessboardKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -126,6 +128,7 @@
 			name = VoiceChess;
 			packageProductDependencies = (
 				1DB4A39A2E78983C008BBB44 /* ChessboardKit */,
+				1D5DC9382E8362F60032BC3E /* ChessKitEngine */,
 			);
 			productName = VoiceChess;
 			productReference = 1D11BACA2E6A31F600B28485 /* VoiceChess.app */;
@@ -211,6 +214,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				1DB4A3992E789836008BBB44 /* XCRemoteSwiftPackageReference "ChessboardKit" */,
+				1D5DC9372E8362E70032BC3E /* XCRemoteSwiftPackageReference "chesskit-engine" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1D11BACB2E6A31F600B28485 /* Products */;
@@ -585,6 +589,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		1D5DC9372E8362E70032BC3E /* XCRemoteSwiftPackageReference "chesskit-engine" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/chesskit-app/chesskit-engine";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.7.0;
+			};
+		};
 		1DB4A3992E789836008BBB44 /* XCRemoteSwiftPackageReference "ChessboardKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/swopnil/ChessboardKit.git";
@@ -596,6 +608,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		1D5DC9382E8362F60032BC3E /* ChessKitEngine */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1D5DC9372E8362E70032BC3E /* XCRemoteSwiftPackageReference "chesskit-engine" */;
+			productName = ChessKitEngine;
+		};
 		1DB4A39A2E78983C008BBB44 /* ChessboardKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 1DB4A3992E789836008BBB44 /* XCRemoteSwiftPackageReference "ChessboardKit" */;

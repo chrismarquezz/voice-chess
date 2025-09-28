@@ -10,7 +10,10 @@ import ChessboardKit
 import AVFoundation
 
 struct MoveHandler {
-    
+
+    // Keep track of repeated positions
+    static var positionCounts: [String: Int] = [:]
+
     static func handleMove(
         move: Move,
         moveText: String,
@@ -24,6 +27,14 @@ struct MoveHandler {
         let newFen = FenSerialization.default.serialize(position: chessboardModel.game.position)
         chessboardModel.setFen(newFen)
         
+        // Update threefold repetition counts
+        if DrawHelper.isThreefoldRepetition(fen: newFen, positionCounts: &positionCounts) {
+            let result = "Draw by threefold repetition!"
+            speak(result, synthesizer: speechSynthesizer)
+            gameOverManager.endGame(with: result)
+            return
+        }
+
         speak(moveText, synthesizer: speechSynthesizer)
         
         checkGameEnd(
@@ -32,7 +43,7 @@ struct MoveHandler {
             synthesizer: speechSynthesizer
         )
     }
-    
+
     static func checkGameEnd(
         chessboardModel: ChessboardModel,
         gameOverManager: GameOverManager,
@@ -61,7 +72,7 @@ struct MoveHandler {
             gameOverManager.endGame(with: result)
         }
     }
-    
+
     static func speak(_ text: String, synthesizer: AVSpeechSynthesizer) {
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
