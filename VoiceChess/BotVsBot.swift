@@ -55,11 +55,6 @@ struct BotVsBotView: View {
                 .multilineTextAlignment(.center)
                 .padding()
             
-            Text("Engine Suggestion: \(bestMoveText)")
-                .font(.headline)
-            
-            Spacer()
-            
             Button("Start Engine vs Engine") {
                 Task {
                     await startEngineVsEngine()
@@ -89,7 +84,6 @@ struct BotVsBotView: View {
         await newEngine.start()
         
         guard let nnueURL = Bundle.main.url(forResource: "nn-1111cefa1111", withExtension: "nnue") else {
-            print("[DEBUG] Could not find NNUE file")
             return
         }
         let nnuePath = nnueURL.path
@@ -101,7 +95,6 @@ struct BotVsBotView: View {
         await newEngine.send(command: .position(.startpos))
         
         engine = newEngine
-        print("[DEBUG] Engine ready")
         
         // Initial evaluation of starting position
         await evaluateCurrentPosition()
@@ -112,11 +105,10 @@ struct BotVsBotView: View {
         guard let engine = engine else { return }
         
         let currentFEN = FenSerialization.default.serialize(position: chessboardModel.game.position)
-        print("[DEBUG] Evaluating FEN: \(currentFEN)")
         
         await engine.send(command: .stop)
         await engine.send(command: .position(.fen(currentFEN)))
-        await engine.send(command: .go(depth: 10))
+        await engine.send(command: .go(depth: 30))
         
         guard let responseStream = await engine.responseStream else { return }
         
@@ -127,10 +119,7 @@ struct BotVsBotView: View {
                     DispatchQueue.main.async {
                         self.bestMoveText = pv[0]
                     }
-                    print("[DEBUG] Engine best legal move: \(pv[0])")
                     break
-                } else {
-                    print("[DEBUG] Engine suggested illegal move: \(pv[0])")
                 }
             }
         }
@@ -148,7 +137,6 @@ struct BotVsBotView: View {
             
             guard let responseStream = await engine.responseStream else { break }
             
-            var moveMade = false
             for await response in responseStream {
                 if case let .info(info) = response, let pv = info.pv, !pv.isEmpty {
                     let move = Move(string: pv[0])
@@ -163,18 +151,10 @@ struct BotVsBotView: View {
                                 speechSynthesizer: speechSynthesizer
                             )
                         }
-                        print("[DEBUG] Engine played: \(pv[0])")
-                        moveMade = true
                         break
                     }
                 }
             }
-            
-            if !moveMade {
-                print("[DEBUG] No legal move found, stopping engine vs engine")
-                break
-            }
-            
             // Small delay to visualize moves
             try? await Task.sleep(nanoseconds: 1_000_000_000) // 1s
         }
