@@ -1,14 +1,6 @@
-//
-//  MenuView.swift
-//  VoiceChess
-//
-//  Created by Chris Marquez on 9/17/25.
-//
-
 import SwiftUI
 
 struct MenuView: View {
-    var onPlay: () -> Void
     
     // Animation states
     @State private var showPieces = false
@@ -42,26 +34,12 @@ struct MenuView: View {
                 .opacity(showPieces ? 1 : 0)
                 .animation(.easeOut(duration: 1.2).delay(0.4), value: showPieces)
             
-            // Menu content (fade-in only)
-            VStack(spacing: 50) {
-                Text("Voice Chess")
-                    .font(.system(size: 60, weight: .bold))
-                    .foregroundColor(.black)
-                    .opacity(showMenuContent ? 1 : 0)
-                    .animation(.easeIn(duration: 0.5).delay(1), value: showMenuContent)
-                
-                Button(action: onPlay) {
-                    Text("Play")
-                        .font(.title2)
-                        .padding()
-                        .frame(width: 150)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(30)
-                }
+            // Title only (fade-in)
+            Text("Voice Chess")
+                .font(.system(size: 60, weight: .bold))
+                .foregroundColor(.black)
                 .opacity(showMenuContent ? 1 : 0)
-                .animation(.easeIn(duration: 0.5).delay(1.2), value: showMenuContent)
-            }
+                .animation(.easeIn(duration: 0.5).delay(1), value: showMenuContent)
         }
         .onAppear {
             // Trigger initial fade-in
@@ -84,8 +62,6 @@ struct MenuView: View {
 
 struct MenuView_Previews: PreviewProvider {
     static var previews: some View {
-        MenuView {
-            print("Play tapped")
-        }
+        MenuView()
     }
 }

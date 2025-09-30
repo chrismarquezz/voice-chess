@@ -16,7 +16,8 @@ struct BotVsBotView: View {
     @State var chessboardModel = ChessboardModel(
         fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
         perspective: .white,
-        allowOpponentMove: true
+        allowOpponentMove: true,
+        pieceStyle: "pixel"
     )
     
     @State private var moveHistory: [String] = []
@@ -47,7 +48,7 @@ struct BotVsBotView: View {
                         await evaluateCurrentPosition()
                     }
                 }
-                .frame(width: 350, height: 350)
+                .frame(width: 400, height: 400)
                 .padding()
             
             Text("Current FEN: \(FenSerialization.default.serialize(position: chessboardModel.game.position))")
@@ -133,7 +134,7 @@ struct BotVsBotView: View {
             let currentFEN = FenSerialization.default.serialize(position: chessboardModel.game.position)
             await engine.send(command: .stop)
             await engine.send(command: .position(.fen(currentFEN)))
-            await engine.send(command: .go(depth: 10))
+            await engine.send(command: .go(depth: 30))
             
             guard let responseStream = await engine.responseStream else { break }
             

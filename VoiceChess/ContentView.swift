@@ -45,7 +45,7 @@ struct ContentView: View {
                         speechSynthesizer: speechSynthesizer
                     )
                 }
-                .frame(width: 350, height: 350)
+                .frame(width: 400, height: 400)
                 .padding()
             
             MoveDisplayView(moveText: pendingMoveText)

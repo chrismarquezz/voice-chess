@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1D5DC9392E8362F60032BC3E /* ChessKitEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 1D5DC9382E8362F60032BC3E /* ChessKitEngine */; };
-		1DB4A39B2E78983C008BBB44 /* ChessboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1DB4A39A2E78983C008BBB44 /* ChessboardKit */; };
+		1DE33E9F2E8B4840003C5E37 /* ChessboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1DE33E9E2E8B4840003C5E37 /* ChessboardKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,7 +58,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1D5DC9392E8362F60032BC3E /* ChessKitEngine in Frameworks */,
-				1DB4A39B2E78983C008BBB44 /* ChessboardKit in Frameworks */,
+				1DE33E9F2E8B4840003C5E37 /* ChessboardKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -127,8 +127,8 @@
 			);
 			name = VoiceChess;
 			packageProductDependencies = (
-				1DB4A39A2E78983C008BBB44 /* ChessboardKit */,
 				1D5DC9382E8362F60032BC3E /* ChessKitEngine */,
+				1DE33E9E2E8B4840003C5E37 /* ChessboardKit */,
 			);
 			productName = VoiceChess;
 			productReference = 1D11BACA2E6A31F600B28485 /* VoiceChess.app */;
@@ -213,8 +213,8 @@
 			mainGroup = 1D11BAC12E6A31F600B28485;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				1DB4A3992E789836008BBB44 /* XCRemoteSwiftPackageReference "ChessboardKit" */,
 				1D5DC9372E8362E70032BC3E /* XCRemoteSwiftPackageReference "chesskit-engine" */,
+				1DE33E9D2E8B4838003C5E37 /* XCRemoteSwiftPackageReference "ChessboardKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1D11BACB2E6A31F600B28485 /* Products */;
@@ -597,12 +597,12 @@
 				minimumVersion = 0.7.0;
 			};
 		};
-		1DB4A3992E789836008BBB44 /* XCRemoteSwiftPackageReference "ChessboardKit" */ = {
+		1DE33E9D2E8B4838003C5E37 /* XCRemoteSwiftPackageReference "ChessboardKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/swopnil/ChessboardKit.git";
+			repositoryURL = "https://github.com/chrismarquezz/ChessboardKit";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.4;
+				minimumVersion = 1.0.5;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -613,9 +613,9 @@
 			package = 1D5DC9372E8362E70032BC3E /* XCRemoteSwiftPackageReference "chesskit-engine" */;
 			productName = ChessKitEngine;
 		};
-		1DB4A39A2E78983C008BBB44 /* ChessboardKit */ = {
+		1DE33E9E2E8B4840003C5E37 /* ChessboardKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 1DB4A3992E789836008BBB44 /* XCRemoteSwiftPackageReference "ChessboardKit" */;
+			package = 1DE33E9D2E8B4838003C5E37 /* XCRemoteSwiftPackageReference "ChessboardKit" */;
 			productName = ChessboardKit;
 		};
 /* End XCSwiftPackageProductDependency section */

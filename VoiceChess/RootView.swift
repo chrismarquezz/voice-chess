@@ -1,22 +1,48 @@
-//
-//  RootView.swift
-//  VoiceChess
-//
-//  Created by Chris Marquez on 9/17/25.
-//
-
 import SwiftUI
 
 struct RootView: View {
-    @State private var showGame = false
+    @State private var showMainTabs = false
+    @State private var animateFade = false
+    
+    let splashDuration: Double = 3.0
     
     var body: some View {
-        if showGame {
-            BotVsBotView()
-        } else {
-            MenuView(onPlay: {
-                showGame = true
-            })
+        ZStack {
+            if showMainTabs {
+                TabView {
+                    ContentView()
+                        .tabItem {
+                            Label("Play", systemImage: "person.fill")
+                        }
+                    
+                    BotVsBotView()
+                        .tabItem {
+                            Label("Bot vs Bot", systemImage: "gearshape.fill")
+                        }
+                    
+                    SettingsView()
+                        .tabItem {
+                            Label("Settings", systemImage: "gear")
+                        }
+                }
+                .transition(.opacity)
+                .ignoresSafeArea()
+            } else {
+                MenuView()
+                    .transition(.opacity)
+                    .opacity(animateFade ? 0 : 1)
+                    .ignoresSafeArea()
+            }
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + splashDuration) {
+                withAnimation(.easeOut(duration: 1.0)) {
+                    animateFade = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    showMainTabs = true
+                }
+            }
         }
     }
 }

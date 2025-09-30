@@ -1,13 +1,13 @@
 {
-  "originHash" : "0a292849c924bef753da1e43ad51d15ce47bff9b8bfd96bb378c479c8ffe0a57",
+  "originHash" : "c7a5de5c6d4431adb96b3d9005424d2f72db9ee7abe921ea2e8e1f35a534b83e",
   "pins" : [
     {
       "identity" : "chessboardkit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swopnil/ChessboardKit.git",
+      "location" : "https://github.com/chrismarquezz/ChessboardKit",
       "state" : {
-        "revision" : "04dc5dc5ee4e03275661e773b2a756ed0378efc6",
-        "version" : "1.0.4"
+        "revision" : "b84f8ffdd31eb7e4ebfcaa8c351295661e9f8626",
+        "version" : "1.0.14"
       }
     },
     {
