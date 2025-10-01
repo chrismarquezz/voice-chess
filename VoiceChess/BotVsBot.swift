@@ -1,5 +1,5 @@
 //
-//  StockfishDebugView.swift
+//  BotVsBot.swift
 //  VoiceChess
 //
 //  Created by Chris Marquez on 9/28/25.
@@ -13,19 +13,34 @@ import AVFoundation
 
 struct BotVsBotView: View {
     
-    @State var chessboardModel = ChessboardModel(
-        fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-        perspective: .white,
-        allowOpponentMove: true,
-        pieceStyle: "pixel"
-    )
-    
+    // Keep the persisted theme for global read/write and to react to changes.
+    @AppStorage("pieceStyle") private var selectedTheme: String = "uscf"
+
+    // IMPORTANT: initialize this in init() — we cannot use `selectedTheme` directly in a property initializer.
+    @State var chessboardModel: ChessboardModel
+
     @State private var moveHistory: [String] = []
     @StateObject var gameOverManager = GameOverManager()
     let speechSynthesizer = AVSpeechSynthesizer()
     
     @State var engine: Engine? = nil
     @State var bestMoveText: String = ""
+    
+    // MARK: - Custom init() that reads UserDefaults to safely initialize the @State chessboardModel
+    init() {
+        // Read the stored theme from UserDefaults (same key used by @AppStorage)
+        let theme = UserDefaults.standard.string(forKey: "pieceStyle") ?? "uscf"
+        
+        // Initialize the chessboard model with the saved theme
+        _chessboardModel = State(initialValue:
+            ChessboardModel(
+                fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+                perspective: .white,
+                allowOpponentMove: true,
+                pieceStyle: theme
+            )
+        )
+    }
     
     var body: some View {
         VStack(spacing: 20) {
@@ -51,11 +66,6 @@ struct BotVsBotView: View {
                 .frame(width: 400, height: 400)
                 .padding()
             
-            Text("Current FEN: \(FenSerialization.default.serialize(position: chessboardModel.game.position))")
-                .font(.caption)
-                .multilineTextAlignment(.center)
-                .padding()
-            
             Button("Start Engine vs Engine") {
                 Task {
                     await startEngineVsEngine()
@@ -69,6 +79,11 @@ struct BotVsBotView: View {
                 }
             }
         }
+        // MARK: - react to theme changes (updates the existing model)
+        .onChange(of: selectedTheme) { _, newValue in
+            chessboardModel.pieceStyle = newValue
+        }
+
         .alert(isPresented: $gameOverManager.gameOver) {
             Alert(
                 title: Text("Game Over"),

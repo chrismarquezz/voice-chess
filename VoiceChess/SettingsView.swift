@@ -14,8 +14,9 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             Form {
-                Toggle("Enable Sound", isOn: $soundEnabled)
-                Toggle("Dark Mode", isOn: $darkMode)
+                NavigationLink(destination: ChangeThemeView()) {
+                    Text("Change Theme")
+                }
             }
             .navigationTitle("Settings")
         }

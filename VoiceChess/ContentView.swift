@@ -12,11 +12,11 @@ import AVFoundation
 
 struct ContentView: View {
     
-    @State var chessboardModel = ChessboardModel(
-        fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-        perspective: .white,
-        allowOpponentMove: false
-    )
+    // Persisted theme
+    @AppStorage("pieceStyle") private var selectedTheme: String = "pixel"
+    
+    // Chessboard model
+    @State var chessboardModel: ChessboardModel
     
     @StateObject var speechManager = SpeechManager()
     @StateObject var gameOverManager = GameOverManager()
@@ -26,6 +26,19 @@ struct ContentView: View {
     @State private var moveHistory: [String] = []
     
     let speechSynthesizer = AVSpeechSynthesizer()
+    
+    // MARK: - Custom init() to use selected theme
+    init() {
+        let theme = UserDefaults.standard.string(forKey: "pieceStyle") ?? "pixel"
+        _chessboardModel = State(initialValue:
+            ChessboardModel(
+                fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+                perspective: .white,
+                allowOpponentMove: false,
+                pieceStyle: theme
+            )
+        )
+    }
     
     var body: some View {
         VStack(spacing: 20) {
@@ -65,9 +78,12 @@ struct ContentView: View {
             Alert(
                 title: Text("Game Over"),
                 message: Text(gameOverManager.gameResult),
-                dismissButton: .default(Text("OK")) {
-                }
+                dismissButton: .default(Text("OK"))
             )
+        }
+        // MARK: - React to theme changes
+        .onChange(of: selectedTheme) { _, newValue in
+            chessboardModel.pieceStyle = newValue
         }
     }
     
@@ -108,14 +124,12 @@ struct ContentView: View {
                 pendingMove = move
                 
                 if let promo = move.promotion {
-                    // Speak promotion confirmation
                     let pieceName: String
                     switch promo {
                     case .queen: pieceName = "queen"
                     case .rook: pieceName = "rook"
                     case .bishop: pieceName = "bishop"
                     case .knight: pieceName = "knight"
-                        
                     default: pieceName = "unknown piece"
                     }
                     speak("\(pendingMoveText!). Promoting to \(pieceName). Yes or no.")

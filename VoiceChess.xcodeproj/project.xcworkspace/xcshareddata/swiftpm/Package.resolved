@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/chrismarquezz/ChessboardKit",
       "state" : {
-        "revision" : "b84f8ffdd31eb7e4ebfcaa8c351295661e9f8626",
-        "version" : "1.0.14"
+        "revision" : "aab392fa206b4f9fd66490ef808381c27bd7edd7",
+        "version" : "1.0.21"
       }
     },
     {

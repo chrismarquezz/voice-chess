@@ -12,7 +12,7 @@ struct RootView: View {
                 TabView {
                     ContentView()
                         .tabItem {
-                            Label("Play", systemImage: "person.fill")
+                            Label("Home", systemImage: "house.fill")
                         }
                     
                     BotVsBotView()
