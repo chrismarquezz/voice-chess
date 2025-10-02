@@ -10,13 +10,13 @@ import ChessboardKit
 import ChessKit
 import AVFoundation
 
-struct ContentView: View {
+struct PlayLocalView: View {
     
     // Persisted theme
     @AppStorage("pieceStyle") private var selectedTheme: String = "pixel"
     
     // Chessboard model
-    @State var chessboardModel: ChessboardModel
+    @State private var chessboardModel: ChessboardModel? = nil
     
     @StateObject var speechManager = SpeechManager()
     @StateObject var gameOverManager = GameOverManager()
@@ -27,52 +27,37 @@ struct ContentView: View {
     
     let speechSynthesizer = AVSpeechSynthesizer()
     
-    // MARK: - Custom init() to use selected theme
-    init() {
-        let theme = UserDefaults.standard.string(forKey: "pieceStyle") ?? "pixel"
-        _chessboardModel = State(initialValue:
-            ChessboardModel(
-                fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                perspective: .white,
-                allowOpponentMove: false,
-                pieceStyle: theme
-            )
-        )
-    }
-    
     var body: some View {
         VStack(spacing: 20) {
             
-            Chessboard(chessboardModel: chessboardModel)
-                .onMove { move, isLegal, from, to, _, promotionPiece in
-                    guard isLegal else { return }
-                    guard !gameOverManager.gameOver else { return }
-                    
-                    let moveText = "\(from) to \(to)"
-                    MoveHandler.handleMove(
-                        move: move,
-                        moveText: moveText,
-                        chessboardModel: &chessboardModel,
-                        moveHistory: &moveHistory,
-                        gameOverManager: gameOverManager,
-                        speechSynthesizer: speechSynthesizer
-                    )
-                }
-                .frame(width: 400, height: 400)
-                .padding()
+            Spacer()
+            
+            if let chessboardModel = chessboardModel {
+                Chessboard(chessboardModel: chessboardModel)
+                    .onMove { move, isLegal, from, to, _, promotionPiece in
+                        guard isLegal else { return }
+                        guard !gameOverManager.gameOver else { return }
+                        
+                        let moveText = "\(from) to \(to)"
+                        MoveHandler.handleMove(
+                            move: move,
+                            moveText: moveText,
+                            chessboardModel: &self.chessboardModel!,
+                            moveHistory: &moveHistory,
+                            gameOverManager: gameOverManager,
+                            speechSynthesizer: speechSynthesizer
+                        )
+                    }
+                    .frame(width: 400, height: 400)
+                    .padding()
+            } else {
+                ProgressView("Loading Board...")
+            }
             
             MoveDisplayView(moveText: pendingMoveText)
             
             Spacer()
-            
-            PresetPositionsView(chessboardModel: $chessboardModel, speak: speak)
-            
-            ToolbarView(
-                startListening: { speechManager.startListening() },
-                stopListening: handleStopListening,
-                resetBoard: resetBoard,
-                flipBoard: flipBoard
-            )
+                                    
         }
         .alert(isPresented: $gameOverManager.gameOver) {
             Alert(
@@ -81,9 +66,18 @@ struct ContentView: View {
                 dismissButton: .default(Text("OK"))
             )
         }
-        // MARK: - React to theme changes
-        .onChange(of: selectedTheme) { _, newValue in
-            chessboardModel.pieceStyle = newValue
+        // MARK: - Initialize or react to theme changes
+        .onAppear {
+            // Always use the latest theme
+            chessboardModel = ChessboardModel(
+                fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+                perspective: .white,
+                allowOpponentMove: false,
+                pieceStyle: selectedTheme
+            )
+        }
+        .onChange(of: selectedTheme) { oldValue, newValue in
+            chessboardModel?.pieceStyle = newValue
         }
     }
     
@@ -106,7 +100,7 @@ struct ContentView: View {
                 MoveHandler.handleMove(
                     move: moveToConfirm,
                     moveText: moveText,
-                    chessboardModel: &chessboardModel,
+                    chessboardModel: &chessboardModel!,
                     moveHistory: &moveHistory,
                     gameOverManager: gameOverManager,
                     speechSynthesizer: speechSynthesizer
@@ -120,7 +114,7 @@ struct ContentView: View {
             }
         } else {
             pendingMoveText = recognized
-            if let move = MoveParser(game: chessboardModel.game).parse(recognized) {
+            if let move = MoveParser(game: chessboardModel!.game).parse(recognized) {
                 pendingMove = move
                 
                 if let promo = move.promotion {
@@ -145,12 +139,12 @@ struct ContentView: View {
     
     func resetBoard() {
         let startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-        chessboardModel.setFen(startFen)
+        chessboardModel?.setFen(startFen)
         moveHistory.removeAll()
     }
     
     func flipBoard() {
-        chessboardModel.perspective = chessboardModel.perspective == .white ? .black : .white
+        chessboardModel?.perspective = chessboardModel!.perspective == .white ? .black : .white
         speak("Board flip")
     }
     
@@ -172,5 +166,5 @@ extension String {
 }
 
 #Preview {
-    ContentView()
+    PlayLocalView()
 }

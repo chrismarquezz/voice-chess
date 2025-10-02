@@ -8,8 +8,6 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @State private var soundEnabled = true
-    @State private var darkMode = false
     
     var body: some View {
         NavigationView {

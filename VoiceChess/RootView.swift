@@ -10,25 +10,22 @@ struct RootView: View {
         ZStack {
             if showMainTabs {
                 TabView {
-                    ContentView()
+                    // Play tab
+                    PlayView()
                         .tabItem {
-                            Label("Home", systemImage: "house.fill")
+                            Label("Play", systemImage: "gamecontroller")
                         }
-                    
-                    BotVsBotView()
+                    // Profile tab
+                    ProfileView()
                         .tabItem {
-                            Label("Bot vs Bot", systemImage: "gearshape.fill")
-                        }
-                    
-                    SettingsView()
-                        .tabItem {
-                            Label("Settings", systemImage: "gear")
+                            Label("Profile", systemImage: "person.crop.circle")
                         }
                 }
                 .transition(.opacity)
                 .ignoresSafeArea()
+                
             } else {
-                MenuView()
+                LoadingView()
                     .transition(.opacity)
                     .opacity(animateFade ? 0 : 1)
                     .ignoresSafeArea()

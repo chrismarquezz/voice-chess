@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct MenuView: View {
+struct LoadingView: View {
     
     // Animation states
     @State private var showPieces = false
@@ -62,6 +62,6 @@ struct MenuView: View {
 
 struct MenuView_Previews: PreviewProvider {
     static var previews: some View {
-        MenuView()
+        LoadingView()
     }
 }
