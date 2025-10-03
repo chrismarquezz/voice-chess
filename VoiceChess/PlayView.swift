@@ -19,7 +19,7 @@ struct PlayView: View {
                 // Chess-themed buttons
                 VStack(spacing: 20) {
                     NavigationLink {
-                        BotVsBotView()
+                        DifficultySelectionView()
                     } label: {
                         HStack {
                             Text("♞")
