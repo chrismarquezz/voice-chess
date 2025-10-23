@@ -1,30 +1,46 @@
+//
+//  RootView.swift
+//  VoiceChess
+//
+//  Created by Chris Marquez on 9/21/25.
+//
+
 import SwiftUI
 
 struct RootView: View {
     @State private var showMainTabs = false
     @State private var animateFade = false
     
-    let splashDuration: Double = 3.0
+    private let splashDuration: Double = 3.0
     
     var body: some View {
         ZStack {
             if showMainTabs {
+                // Main Tabs
                 TabView {
-                    // Play tab
-                    PlayView()
+                    // Local voice-controlled play
+                    PlayLocalView()
                         .tabItem {
-                            Label("Play", systemImage: "gamecontroller")
+                            Label("Local", systemImage: "person.2.fill")
                         }
-                    // Profile tab
-                    ProfileView()
+                    
+                    // Bot play tab
+                    DifficultySelectionView()
                         .tabItem {
-                            Label("Profile", systemImage: "person.crop.circle")
+                            Label("Bot", systemImage: "cpu.fill")
+                        }
+                    
+                    // Optional: Settings tab
+                    SettingsView()
+                        .tabItem {
+                            Label("Settings", systemImage: "gearshape.fill")
                         }
                 }
                 .transition(.opacity)
                 .ignoresSafeArea()
                 
             } else {
+                // Splash / Loading screen
                 LoadingView()
                     .transition(.opacity)
                     .opacity(animateFade ? 0 : 1)
@@ -32,6 +48,7 @@ struct RootView: View {
             }
         }
         .onAppear {
+            // Start fade transition
             DispatchQueue.main.asyncAfter(deadline: .now() + splashDuration) {
                 withAnimation(.easeOut(duration: 1.0)) {
                     animateFade = true

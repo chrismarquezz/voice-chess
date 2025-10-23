@@ -10,35 +10,50 @@ class SpeechManager: NSObject, ObservableObject {
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()
     
+    private var restartTimer: Timer?
+    private var isListening = false
+    
     // MARK: - Start Listening
     func startListening() {
-        // Check authorization
+        guard !isListening else { return }
+        isListening = true
+        
         SFSpeechRecognizer.requestAuthorization { authStatus in
             switch authStatus {
             case .authorized:
-                self.startRecording()
-            case .denied, .restricted, .notDetermined:
+                DispatchQueue.main.async {
+                    self.startRecording()
+                }
+            default:
                 print("Speech recognition authorization denied or not available.")
-            @unknown default:
-                print("Unknown authorization status.")
             }
         }
     }
     
     // MARK: - Stop Listening
     func stopListening() {
+        isListening = false
         audioEngine.stop()
+        audioEngine.inputNode.removeTap(onBus: 0)
         recognitionRequest?.endAudio()
         recognitionTask?.cancel()
+        restartTimer?.invalidate()
+    }
+    
+    // MARK: - Restart Listening Automatically
+    private func restartIfNeeded() {
+        guard isListening else { return }
+        restartTimer?.invalidate()
+        restartTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { _ in
+            self.startRecording()
+        }
     }
     
     // MARK: - Recording
     private func startRecording() {
-        // Make sure previous task is cancelled
         recognitionTask?.cancel()
         recognitionTask = nil
         
-        // Audio session setup
         let audioSession = AVAudioSession.sharedInstance()
         do {
             try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
@@ -67,10 +82,12 @@ class SpeechManager: NSObject, ObservableObject {
             return
         }
         
-        recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { result, error in
+        recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { [weak self] result, error in
+            guard let self = self else { return }
             if let result = result {
+                let text = result.bestTranscription.formattedString.lowercased()
                 DispatchQueue.main.async {
-                    self.recognizedText = result.bestTranscription.formattedString
+                    self.recognizedText = text
                 }
             }
             
@@ -79,6 +96,7 @@ class SpeechManager: NSObject, ObservableObject {
                 inputNode.removeTap(onBus: 0)
                 self.recognitionRequest = nil
                 self.recognitionTask = nil
+                self.restartIfNeeded()
             }
         }
     }
